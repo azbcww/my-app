@@ -40,8 +40,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users (Username VARCHAR(255) PRIMARY KEY, HashedPass VARCHAR(255))") 
+	if err != nil { 
+		log.Fatal(err) 
+	} 
+
 	h := handler.NewHandler(db)
 	e := echo.New()
+
+	e.POST("/signup", h.SignUpHandler) 
 
 	e.GET("/cities/:cityName", h.GetCityInfoHandler)
 	e.POST("/cities", h.PostCityHandler)
