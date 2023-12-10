@@ -225,9 +225,5 @@ func (h *Handler) PostDateData(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	// if dateData.Error != "" {
-	// 	println(dateData.Error)
-	// }
-
 	return c.JSON(http.StatusCreated, dateData)
 }
