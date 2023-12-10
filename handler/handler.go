@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os/exec"
+	"encoding/json"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo-contrib/session"
@@ -42,9 +44,15 @@ type Me struct {
 	Username string `json:"username,omitempty"  db:"username"`
 }
 
-type Data struct {
+type UserAndData struct {
 	Username   string `json:"username,omitempty"  db:"Username"`
 	Data   string `json:"data,omitempty"`
+}
+
+type DateData struct {
+	Start string `json:"start"`
+	End string `json:"end"`
+	Error string `json:"error"`
 }
 
 func (h *Handler) SignUpHandler(c echo.Context) error {
@@ -197,14 +205,29 @@ func (h *Handler) PostCityHandler(c echo.Context) error {
 	return c.JSON(http.StatusCreated, city)
 }
 
-func (h *Handler) PostData(c echo.Context) error {
-	var data Data
+func (h *Handler) PostDateData(c echo.Context) error {
+	var data UserAndData
 	err := c.Bind(&data)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request body")
 	}
 
-	log.Printf(data.Data)
+	cmd := exec.Command("python3", "./main.py", data.Data)
+	out, err := cmd.Output()
 
-	return c.JSON(http.StatusCreated, data)
+	if err != nil {
+		log.Printf("failed to exec the python script: %s\n", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	var dateData DateData
+	if err = json.Unmarshal(out, &dateData); err != nil {
+		log.Printf("failed to unmarshal: %s\n", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	// if dateData.Error != "" {
+	// 	println(dateData.Error)
+	// }
+
+	return c.JSON(http.StatusCreated, dateData)
 }

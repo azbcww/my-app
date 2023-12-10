@@ -73,7 +73,7 @@ func main() {
 	withAuth.GET("/me", handler.GetMeHandler)
 	withAuth.GET("/cities/:cityName", h.GetCityInfoHandler)
 	withAuth.POST("/cities", h.PostCityHandler)
-	withAuth.POST("/register", h.PostData)
+	withAuth.POST("/register", h.PostDateData)
 
 	err = e.Start(":8080")
 	if err != nil {
