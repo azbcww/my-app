@@ -42,6 +42,11 @@ type Me struct {
 	Username string `json:"username,omitempty"  db:"username"`
 }
 
+type Data struct {
+	Username   string `json:"username,omitempty"  db:"Username"`
+	Data   string `json:"data,omitempty"`
+}
+
 func (h *Handler) SignUpHandler(c echo.Context) error {
 	// リクエストを受け取り、reqに格納する
 	req := LoginRequestBody{}
@@ -190,4 +195,16 @@ func (h *Handler) PostCityHandler(c echo.Context) error {
 	city.ID = int(id)
 
 	return c.JSON(http.StatusCreated, city)
+}
+
+func (h *Handler) PostData(c echo.Context) error {
+	var data Data
+	err := c.Bind(&data)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad request body")
+	}
+
+	log.Printf(data.Data)
+
+	return c.JSON(http.StatusCreated, data)
 }
