@@ -95,6 +95,16 @@ func (h *Handler) SignUpHandler(c echo.Context) error {
 		log.Println(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+
+	// セッションストアに登録する
+	sess, err := session.Get("sessions", c)
+	if err != nil {
+		log.Println(err)
+		return c.String(http.StatusInternalServerError, "something wrong in getting session")
+	}
+	sess.Values["userName"] = req.Username
+	sess.Save(c.Request(), c.Response())
+	
 	// 登録に成功したら201 Createdを返す
 	return c.NoContent(http.StatusCreated)
 }

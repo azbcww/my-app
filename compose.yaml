@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: kakakakakku/mysql-world-database:8.0
+    image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: password
       TZ: Asia/Tokyo
@@ -10,6 +10,7 @@ services:
     ports:
       - 3306:3306
     volumes:
+      - ./initdb.d:/docker-entrypoint-initdb.d
       - mysql:/var/lib/mysql
       - ./mysql.cnf:/etc/mysql/conf.d/mysql.cnf
 
