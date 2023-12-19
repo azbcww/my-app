@@ -47,6 +47,10 @@ type DateData struct {
 	Error string `json:"error"`
 }
 
+type RemoveResponseData struct {
+	Error string `json:"error"`
+}
+
 func (h *Handler) SignUpHandler(c echo.Context) error {
 	// リクエストを受け取り、reqに格納する
 	req := LoginRequestBody{}
@@ -168,7 +172,7 @@ func GetMeHandler(c echo.Context) error {
 	})
 }
 
-func (h *Handler) PostDateData(c echo.Context) error {
+func (h *Handler) RegisterEvent(c echo.Context) error {
 	var data UserAndData
 	err := c.Bind(&data)
 	if err != nil {
@@ -188,5 +192,52 @@ func (h *Handler) PostDateData(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
+	// イベントを登録する
+	_, err = h.db.Exec("INSERT INTO content (userName, startDate, endDate, title) VALUES (?, ?, ?, ?)", data.Username, dateData.Start, dateData.End, data.Data)
+	// 登録に失敗したら500 InternalServerErrorを返す
+	if err != nil {
+		log.Println(err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
 	return c.JSON(http.StatusCreated, dateData)
+}
+
+func (h *Handler) RemoveEvent(c echo.Context) error {
+	var data UserAndData
+	err := c.Bind(&data)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad request body")
+	}
+
+	cmd := exec.Command("python3", "./main.py", data.Data)
+	out, err := cmd.Output()
+
+	if err != nil {
+		log.Printf("failed to exec the python script: %s\n", err)
+		var res RemoveResponseData
+		res.Error = "11111"
+		return c.JSON(http.StatusInternalServerError, res)
+		// return c.NoContent(http.StatusInternalServerError)
+	}
+	var dateData DateData
+	if err = json.Unmarshal(out, &dateData); err != nil {
+		log.Printf("failed to unmarshal: %s\n", err)
+		var res RemoveResponseData
+		res.Error = "222222"
+		return c.JSON(http.StatusInternalServerError, res)
+		// return c.NoContent(http.StatusInternalServerError)
+	}
+	// イベントを削除する
+	_, err = h.db.Exec("DELETE FROM content  WHERE userName=? AND startDate=? AND endDate=? AND title=? LIMIT 1", data.Username, dateData.Start, dateData.End, data.Data)
+	// 登録に失敗したら500 InternalServerErrorを返す
+	if err != nil {
+		log.Println(err)
+		var res RemoveResponseData
+		res.Error = err.Error()
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+	var res RemoveResponseData
+	res.Error = ""
+	return c.JSON(http.StatusCreated, res)
 }

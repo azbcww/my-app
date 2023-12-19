@@ -69,7 +69,8 @@ func main() {
 	withAuth := e.Group("")
 	withAuth.Use(handler.UserAuthMiddleware)
 	withAuth.GET("/me", handler.GetMeHandler)
-	withAuth.POST("/register", h.PostDateData)
+	withAuth.POST("/register", h.RegisterEvent)
+	withAuth.POST("/remove", h.RemoveEvent)
 
 	err = e.Start(":8080")
 	if err != nil {
