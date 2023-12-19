@@ -17,7 +17,7 @@ def getStartAndEndDate(text):
     return ans
 
 def main():
-    ans = {"start":"", "end":"", "error":1}
+    ans = {"start":"", "end":"", "error":""}
     if len(sys.argv) != 2:
         ans["error"] = "error: the argument length is not correct."
         sys.stdout.write(json.dumps(ans, ensure_ascii=False, indent=2))

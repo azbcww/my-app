@@ -1,9 +1,9 @@
 CREATE DATABASE IF NOT EXISTS events;
 USE events;
 CREATE TABLE content (
-    userName varchar(255) NOT NULL,
-    startDate VARCHAR(255) NOT NULL,
-    endDate VARCHAR(255) NOT NULL,
-    title TEXT NOT NULL
+    Username varchar(255) NOT NULL,
+    StartDate VARCHAR(255) NOT NULL,
+    EndDate VARCHAR(255) NOT NULL,
+    Title TEXT NOT NULL
 );
 ALTER TABLE content ADD INDEX idx (userNAME);

@@ -71,6 +71,7 @@ func main() {
 	withAuth.GET("/me", handler.GetMeHandler)
 	withAuth.POST("/register", h.RegisterEvent)
 	withAuth.POST("/remove", h.RemoveEvent)
+	withAuth.GET("/events", h.GetEvents)
 
 	err = e.Start(":8080")
 	if err != nil {

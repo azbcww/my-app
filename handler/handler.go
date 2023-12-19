@@ -2,11 +2,11 @@ package handler
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"os/exec"
-	"encoding/json"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo-contrib/session"
@@ -37,18 +37,25 @@ type Me struct {
 }
 
 type UserAndData struct {
-	Username   string `json:"username,omitempty"  db:"Username"`
-	Data   string `json:"data,omitempty"`
+	Username string `json:"username,omitempty"  db:"Username"`
+	Data     string `json:"data,omitempty"`
 }
 
 type DateData struct {
 	Start string `json:"start"`
-	End string `json:"end"`
+	End   string `json:"end"`
 	Error string `json:"error"`
 }
 
 type RemoveResponseData struct {
 	Error string `json:"error"`
+}
+
+type Event struct {
+	Username  string `json:"username" db:"Username"`
+	StartDate string `json:"startdate" db:"StartDate"`
+	EndDate   string `json:"enddate" db:"EndDate"`
+	Title     string `json:"title" db:"Title"`
 }
 
 func (h *Handler) SignUpHandler(c echo.Context) error {
@@ -100,7 +107,7 @@ func (h *Handler) SignUpHandler(c echo.Context) error {
 	}
 	sess.Values["userName"] = req.Username
 	sess.Save(c.Request(), c.Response())
-	
+
 	// 登録に成功したら201 Createdを返す
 	return c.NoContent(http.StatusCreated)
 }
@@ -191,9 +198,13 @@ func (h *Handler) RegisterEvent(c echo.Context) error {
 		log.Printf("failed to unmarshal: %s\n", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	if dateData.Start == "" || dateData.End == "" {
+		dateData.Error = "bad format"
+		return c.JSON(http.StatusOK, dateData)
+	}
 
 	// イベントを登録する
-	_, err = h.db.Exec("INSERT INTO content (userName, startDate, endDate, title) VALUES (?, ?, ?, ?)", data.Username, dateData.Start, dateData.End, data.Data)
+	_, err = h.db.Exec("INSERT INTO content (Username, StartDate, EndDate, Title) VALUES (?, ?, ?, ?)", data.Username, dateData.Start, dateData.End, data.Data)
 	// 登録に失敗したら500 InternalServerErrorを返す
 	if err != nil {
 		log.Println(err)
@@ -215,29 +226,36 @@ func (h *Handler) RemoveEvent(c echo.Context) error {
 
 	if err != nil {
 		log.Printf("failed to exec the python script: %s\n", err)
-		var res RemoveResponseData
-		res.Error = "11111"
-		return c.JSON(http.StatusInternalServerError, res)
-		// return c.NoContent(http.StatusInternalServerError)
+		return c.NoContent(http.StatusInternalServerError)
 	}
 	var dateData DateData
 	if err = json.Unmarshal(out, &dateData); err != nil {
 		log.Printf("failed to unmarshal: %s\n", err)
-		var res RemoveResponseData
-		res.Error = "222222"
-		return c.JSON(http.StatusInternalServerError, res)
-		// return c.NoContent(http.StatusInternalServerError)
+		return c.NoContent(http.StatusInternalServerError)
 	}
 	// イベントを削除する
-	_, err = h.db.Exec("DELETE FROM content  WHERE userName=? AND startDate=? AND endDate=? AND title=? LIMIT 1", data.Username, dateData.Start, dateData.End, data.Data)
+	_, err = h.db.Exec("DELETE FROM content  WHERE Username=? AND StartDate=? AND EndDate=? AND Title=? LIMIT 1", data.Username, dateData.Start, dateData.End, data.Data)
 	// 登録に失敗したら500 InternalServerErrorを返す
 	if err != nil {
 		log.Println(err)
-		var res RemoveResponseData
-		res.Error = err.Error()
-		return c.JSON(http.StatusInternalServerError, res)
+		return c.NoContent(http.StatusInternalServerError)
 	}
-	var res RemoveResponseData
-	res.Error = ""
+	res := RemoveResponseData{
+		Error: "",
+	}
 	return c.JSON(http.StatusCreated, res)
+}
+
+func (h *Handler) GetEvents(c echo.Context) error {
+	name := c.Get("userName").(string)
+
+	events := make([]Event, 0)
+	sql := "SELECT * FROM content WHERE Username=?"
+	err := h.db.Select(&events, sql, name)
+	if err != nil {
+		log.Println(err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusOK, events)
 }
