@@ -14,6 +14,12 @@ RUN set -x \
 
 ENV PATH $PATH:/usr/local/go/bin
 
+ENV DB_USERNAME root
+ENV DB_PASSWORD password
+ENV DB_HOSTNAME db
+ENV DB_PORT 3306
+ENV DB_DATABASE events
+
 WORKDIR /work
 
 COPY . .
